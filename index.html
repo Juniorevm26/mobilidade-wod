@@ -1,0 +1,597 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Mobilidade WOD">
+<meta name="theme-color" content="#0D7A72">
+<title>Mobilidade WOD</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<style>
+html{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0}
+img{max-width:100%}
+[hidden]{display:none!important}
+/* Layout: coluna única; montador (quando + foco + chips) no topo, rotina gerada abaixo; player em tela cheia com foto animada e anel de tempo */
+:root{
+  --bg:#EDF1F0; --surface:#FFFFFF; --ink:#13201F; --muted:#566866; --line:#D2DBD9;
+  --accent:#0D7A72; --accent-ink:#FFFFFF; --signal:#D98E0B; --soft:#DCEAE7;
+  --display:"Big Shoulders Display","Arial Narrow",Impact,sans-serif;
+  --body:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0D1514; --surface:#15201E; --ink:#E5EEEC; --muted:#93A6A3; --line:#26342F;
+  --accent:#3FBDB1; --accent-ink:#04201C; --signal:#F2B33D; --soft:#183330; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0D1514; --surface:#15201E; --ink:#E5EEEC; --muted:#93A6A3; --line:#26342F;
+  --accent:#3FBDB1; --accent-ink:#04201C; --signal:#F2B33D; --soft:#183330; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 48px}
+.wrap{max-width:720px;margin:0 auto;display:flex;flex-direction:column;gap:24px}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0;letter-spacing:.01em}
+h1{font-size:clamp(40px,9vw,60px);line-height:.95;text-transform:uppercase}
+.lede{color:var(--muted);margin:8px 0 0;max-width:60ch}
+.label{font-size:12px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,summary:focus-visible{outline:3px solid var(--signal);outline-offset:2px}
+
+.builder{display:flex;flex-direction:column;gap:16px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px}
+.row{display:flex;flex-direction:column;gap:8px}
+.big-seg{display:grid;grid-template-columns:1fr 1fr;border:2px solid var(--line);border-radius:10px;overflow:hidden}
+.big-seg button{background:transparent;border:0;padding:10px 8px;text-align:left;display:flex;flex-direction:column;gap:2px}
+.big-seg button + button{border-left:2px solid var(--line)}
+.big-seg strong{font-family:var(--display);font-size:22px;line-height:1;text-transform:uppercase}
+.big-seg span{font-size:13px;color:var(--muted)}
+.big-seg button[aria-pressed="true"]{background:var(--soft)}
+.big-seg button[aria-pressed="true"] strong{color:var(--accent)}
+.tabs{display:inline-flex;gap:4px;border-bottom:1px solid var(--line)}
+.tabs button{background:transparent;border:0;border-bottom:3px solid transparent;padding:6px 10px;font-weight:700;font-size:15px;color:var(--muted);margin-bottom:-1px}
+.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:7px 14px;font-size:14px;display:inline-flex;flex-direction:column;text-align:left;line-height:1.2}
+.chip small{color:var(--muted);font-size:12px}
+.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.chip[aria-pressed="true"] small{color:var(--accent-ink);opacity:.85}
+.focus-line{font-size:14px;color:var(--muted)}
+.focus-line b{color:var(--ink)}
+
+.summary{display:flex;flex-wrap:wrap;align-items:end;justify-content:space-between;gap:16px}
+.stats{display:flex;gap:24px}
+.stat b{display:block;font-family:var(--display);font-size:38px;line-height:1;font-variant-numeric:tabular-nums}
+.start{background:var(--accent);color:var(--accent-ink);border:0;border-radius:999px;padding:14px 28px;font-weight:700;font-size:17px;display:inline-flex;gap:10px;align-items:center}
+.start:disabled{opacity:.4;cursor:not-allowed}
+.start svg{width:18px;height:18px}
+
+.settings{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:center;padding-block:12px;border-block:1px solid var(--line)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{background:transparent;border:0;padding:6px 12px;font-size:14px}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.toggle{display:inline-flex;gap:8px;align-items:center;font-size:14px}
+.toggle input{width:18px;height:18px;accent-color:var(--accent)}
+.setgroup{display:flex;gap:8px;align-items:center}
+
+/* foto do exercício: dois quadros reais que alternam, como um GIF */
+.photo{position:relative;display:block;aspect-ratio:3/2;overflow:hidden;border-radius:10px;background:var(--line);width:100%}
+.photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+.photo.mir img{transform:scaleX(-1)}
+.photo.anim.din .f1{animation:flip var(--per,2.4s) infinite}
+.photo.anim.est .f1{animation:hold var(--per,7s) infinite}
+@keyframes flip{0%,40%{opacity:0}50%,90%{opacity:1}100%{opacity:0}}
+@keyframes hold{0%,14%{opacity:0}22%,94%{opacity:1}100%{opacity:0}}
+.player.paused .photo .f1{animation-play-state:paused}
+
+.list{display:flex;flex-direction:column;gap:8px;margin:0;padding:0;list-style:none}
+.item{background:var(--surface);border:1px solid var(--line);border-radius:10px}
+.item summary{list-style:none;display:grid;grid-template-columns:24px 84px 1fr auto;gap:12px;align-items:center;padding:10px 14px;cursor:pointer}
+.item summary::-webkit-details-marker{display:none}
+.num{font-family:var(--display);font-size:22px;color:var(--muted);font-variant-numeric:tabular-nums}
+.thumb{width:84px;border-radius:6px}
+.item h3{font-family:var(--body);font-size:16px;font-weight:700;line-height:1.25}
+.meta{font-size:13px;color:var(--muted)}
+.tag{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;border-radius:4px;padding:1px 6px;margin-right:6px;background:var(--soft);color:var(--accent)}
+.tag.est{background:transparent;border:1px solid var(--line);color:var(--muted)}
+.time{font-family:var(--display);font-size:20px;font-variant-numeric:tabular-nums;text-align:right;line-height:1.1}
+.time small{display:block;font-family:var(--body);font-size:12px;color:var(--muted)}
+.how{padding:0 14px 14px;display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:16px;align-items:start}
+.how ol{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.pill{font-size:12px;font-weight:700;border-radius:999px;padding:3px 10px;background:var(--soft);color:var(--accent)}
+.pill.eq{background:transparent;border:1px solid var(--line);color:var(--muted)}
+.sect{font-family:var(--display);font-size:18px;text-transform:uppercase;letter-spacing:.04em;margin:10px 0 4px}
+.stim{margin:0;padding:8px 12px;border-left:3px solid var(--signal);background:var(--bg);border-radius:0 6px 6px 0}
+.empty{background:var(--surface);border:1px dashed var(--line);border-radius:10px;padding:24px;text-align:center;color:var(--muted)}
+.note{font-size:14px;color:var(--muted);margin:0}
+@media (max-width:560px){
+  .item summary{grid-template-columns:20px 68px 1fr auto;gap:10px;padding:10px}
+  .thumb{width:68px}
+  .how{grid-template-columns:1fr}
+}
+
+/* player */
+.player{position:fixed;inset:0;z-index:20;background:var(--bg);overflow-y:auto;
+  padding-top:calc(env(safe-area-inset-top,0px) + 12px);padding-bottom:calc(env(safe-area-inset-bottom,0px) + 16px);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.pin{max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:12px;min-height:100%}
+.ptop{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.close{background:transparent;border:1px solid var(--line);border-radius:999px;padding:6px 14px;font-size:14px}
+.bar{height:6px;background:var(--line);border-radius:3px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent);width:0;transition:width .3s}
+.phase{font-weight:700;letter-spacing:.09em;text-transform:uppercase;font-size:13px;color:var(--accent)}
+.phase.prep{color:var(--signal)}
+.pname{font-size:clamp(30px,7.5vw,44px);line-height:1;text-transform:uppercase}
+.trow{display:grid;grid-template-columns:132px minmax(0,1fr);gap:14px;align-items:center}
+.ring{position:relative;width:132px;aspect-ratio:1}
+.ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.ring .trk{stroke:var(--line);stroke-width:8;fill:none}
+.ring .arc{stroke:var(--accent);stroke-width:8;fill:none;stroke-linecap:round;transition:stroke-dashoffset .2s linear}
+.ring.prep .arc{stroke:var(--signal)}
+.ring .sec{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--display);font-weight:800;font-size:58px;font-variant-numeric:tabular-nums;line-height:1}
+.pstim{margin:0;padding:8px 12px;border-left:3px solid var(--signal);background:var(--surface);border-radius:0 6px 6px 0;font-size:15px}
+.psteps{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:4px}
+.next{font-size:14px;color:var(--muted);border-top:1px solid var(--line);padding-top:10px}
+.ctrls{display:flex;justify-content:center;gap:14px;margin-top:auto;padding-top:8px}
+.cb{width:60px;height:60px;border-radius:50%;border:1px solid var(--line);background:var(--surface);display:grid;place-items:center}
+.cb svg{width:24px;height:24px;fill:var(--ink)}
+.cb.main{width:76px;height:76px;background:var(--accent);border:0}
+.cb.main svg{fill:var(--accent-ink);width:30px;height:30px}
+.done{text-align:center;display:flex;flex-direction:column;gap:12px;align-items:center;padding-top:15vh}
+.credit{font-size:12px;color:var(--muted);margin:0}
+@media (prefers-reduced-motion:reduce){.bar i,.ring .arc{transition:none}.photo.anim .f1{animation:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="label">Alongamento e mobilidade com timer</div>
+    <h1>Mobilidade WOD</h1>
+    <p class="lede">Diga o que vai treinar ou quais músculos quer trabalhar. A rotina é montada para esse foco: mobilidade dinâmica antes do treino, alongamento parado depois.</p>
+  </header>
+
+  <section class="builder" aria-label="Montar rotina">
+    <div class="row">
+      <span class="label">Quando</span>
+      <div class="big-seg" id="whenSeg">
+        <button data-w="pre"><strong>Antes do treino</strong><span>Movimentos dinâmicos para aquecer</span></button>
+        <button data-w="pos"><strong>Depois do treino</strong><span>Alongamentos parados para soltar</span></button>
+      </div>
+    </div>
+    <div class="row">
+      <div class="tabs" role="tablist">
+        <button role="tab" data-by="treino" id="tabTreino">Pelo treino do dia</button>
+        <button role="tab" data-by="grupo" id="tabGrupo">Pelo grupo muscular</button>
+      </div>
+      <div class="chips" id="chips" role="group"></div>
+      <div class="focus-line" id="focusLine"></div>
+    </div>
+  </section>
+
+  <section class="summary">
+    <div class="stats">
+      <div class="stat"><b id="stMin">0</b><span class="meta">minutos</span></div>
+      <div class="stat"><b id="stEx">0</b><span class="meta">exercícios</span></div>
+    </div>
+    <button class="start" id="startBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4l13 8-13 8z" fill="currentColor"/></svg>Começar rotina</button>
+  </section>
+
+  <section class="settings" aria-label="Ajustes">
+    <div class="setgroup"><span class="label">Tempo</span>
+      <div class="seg" id="scaleSeg">
+        <button data-s="0.75">Curto</button><button data-s="1">Normal</button><button data-s="1.5">Longo</button>
+      </div>
+    </div>
+    <label class="toggle"><input type="checkbox" id="optBeep" checked> Bipes</label>
+    <label class="toggle"><input type="checkbox" id="optVoice" checked> Voz</label>
+  </section>
+
+  <ol class="list" id="list"></ol>
+  <p class="note">Alongue até sentir tensão, nunca dor. Respire devagar e solte o ar ao aprofundar. Se algum exercício incomodar uma lesão, pule com ⏭.</p>
+  <p class="credit">Fotos dos exercícios: free-exercise-db, banco aberto em domínio público.</p>
+</div>
+
+<div class="player" id="player" hidden>
+  <div class="pin" id="pin"></div>
+</div>
+
+<script>
+/* ---------- grupos musculares e treinos ---------- */
+const GROUPS = {
+  ombros:"Ombros", peito:"Peito", dorsal:"Dorsais", toracica:"Coluna torácica", lombar:"Lombar",
+  quadril:"Flexor do quadril", gluteos:"Glúteos", adutores:"Adutores", quadriceps:"Quadríceps",
+  posterior:"Posterior de coxa", panturrilha:"Panturrilha e tornozelo", triceps:"Tríceps",
+  antebraco:"Punho e antebraço", pescoco:"Pescoço e trapézio"
+};
+const WORKOUTS = {
+  agach:{n:"Agachamento",ex:"back/front squat, thruster, wall ball",g:["quadriceps","gluteos","adutores","panturrilha","quadril","lombar"]},
+  terra:{n:"Levantamento terra",ex:"deadlift, KB swing, good morning",g:["posterior","gluteos","lombar","quadril","antebraco"]},
+  olimp:{n:"Olímpicos",ex:"snatch, clean, jerk",g:["ombros","toracica","panturrilha","quadril","antebraco","quadriceps"]},
+  over:{n:"Acima da cabeça",ex:"press, push press, HSPU",g:["ombros","dorsal","toracica","triceps","antebraco"]},
+  puxada:{n:"Puxadas",ex:"pull-up, toes to bar, muscle-up",g:["dorsal","ombros","antebraco","peito","toracica"]},
+  empurra:{n:"Empurrar",ex:"flexão, burpee, dips, supino",g:["peito","ombros","triceps","antebraco"]},
+  corrida:{n:"Corrida e saltos",ex:"run, double-under, box jump",g:["panturrilha","quadril","quadriceps","posterior"]},
+  remo:{n:"Remo e bike",ex:"remo, assault bike, ski",g:["posterior","lombar","quadril","dorsal","quadriceps"]}
+};
+
+/* ---------- exercícios: din (dinâmico) ou est (parado). Fotos em img/<id>-0.jpg (início) e -1.jpg (final) ---------- */
+const EX = {
+  armc:{n:"Círculos de braço",type:"din",g:["ombros"],dur:30,sides:1,per:1.6,
+    stim:"Calor e soltura em toda a articulação do ombro.",
+    steps:["Em pé, abra os braços na altura dos ombros, paralelos ao chão.","Faça círculos de uns 30 cm de diâmetro com os dois braços.","Na metade do tempo, inverta o sentido."]},
+  shc:{n:"Círculos de ombro",type:"din",g:["ombros","pescoco"],dur:30,sides:1,per:2,
+    stim:"Soltura no trapézio e na base do pescoço.",
+    steps:["Ombros relaxados, braços soltos ao lado do corpo.","Role os ombros para frente, para cima, para trás e para baixo.","Inverta o sentido na metade do tempo."]},
+  dchest:{n:"Abre e fecha braços",type:"din",g:["peito","ombros"],dur:30,sides:1,per:1.8,
+    stim:"Abertura na frente do peito e dos ombros.",
+    steps:["Em pé, junte as mãos com os braços estendidos à frente.","Com os braços retos, leve-os para trás o máximo que conseguir e volte, como uma palma exagerada.","Aumente a velocidade e a amplitude aos poucos."]},
+  dback:{n:"Balanço de braços para cima",type:"din",g:["dorsal","ombros"],dur:30,sides:1,per:2,
+    stim:"Alongamento nas laterais das costas e ombros soltando acima da cabeça.",
+    steps:["Em pé, pés na largura dos ombros.","Com os braços retos, balance-os para cima pela frente do corpo.","Aumente a amplitude a cada repetição, até os braços passarem acima da cabeça."]},
+  wrist:{n:"Círculos de punho",type:"din",g:["antebraco"],dur:30,sides:1,per:1.6,
+    stim:"Punhos soltos e antebraços aquecidos.",
+    steps:["Em pé, abra os braços em T, com as palmas para baixo.","Com o corpo parado, gire os dois punhos para frente, como se desenhasse círculos com as mãos.","Na metade do tempo, gire para trás."]},
+  cat:{n:"Gato",type:"din",g:["toracica","lombar"],dur:40,sides:1,per:4,
+    stim:"Alongamento ao longo de toda a coluna, do pescoço à lombar.",
+    steps:["Fique de quatro apoios, mãos sob os ombros e joelhos sob o quadril.","Puxe a barriga para dentro e arredonde a coluna e os ombros, deixando a cabeça cair.","Volte à posição neutra e repita devagar, no ritmo da respiração."]},
+  wgs:{n:"O maior alongamento do mundo",type:"din",g:["quadril","toracica","posterior","adutores"],dur:45,sides:2,per:4,
+    stim:"Abertura do quadril e da virilha, com alongamento atrás da coxa da frente.",
+    steps:["Dê um passo longo à frente: pé da frente inteiro no chão, perna de trás na ponta do pé.","Desça o quadril com o tronco ereto e segure alguns segundos.","Apoie no chão o cotovelo do lado da perna da frente, junto ao pé. A outra mão fica no chão como apoio.","Volte e repita, sem pressa."]},
+  groin:{n:"Saltos de virilha",type:"din",g:["adutores","quadril"],dur:30,sides:1,per:1.6,
+    stim:"Abertura da virilha e do quadril, com o corpo aquecendo rápido.",
+    steps:["Comece na posição de flexão.","Salte com os dois pés para frente, pousando ao lado das mãos, com a cabeça erguida.","Volte à posição de flexão e repita em seguida."]},
+  flr:{n:"Balanço de perna para frente",type:"din",g:["posterior","quadril"],dur:30,sides:2,per:1.8,eq:"Cadeira ou parede",
+    stim:"Alongamento atrás da coxa na subida e na frente do quadril na volta.",
+    steps:["Fique ao lado de uma cadeira ou outro apoio e segure com uma mão.","Balance a perna para frente, mantendo-a esticada.","Deixe-a descer e ir para trás até onde a flexibilidade permitir. Repita."]},
+  hipc:{n:"Círculos de quadril em pé",type:"din",g:["quadril","gluteos"],dur:30,sides:2,per:2.4,eq:"Apoio para a mão",
+    stim:"Soltura profunda na articulação do quadril.",
+    steps:["Em pé sobre uma perna, segure em um apoio.","Suba o outro joelho até 90 graus.","Abra o quadril o máximo possível, desenhando um círculo grande com o joelho. Faça devagar."]},
+  rear:{n:"Elevação de perna para trás",type:"din",g:["gluteos","quadril"],dur:30,sides:2,per:2.4,
+    stim:"Glúteo ativando e frente do quadril abrindo.",
+    steps:["Fique de quatro apoios, olhando para frente, com os joelhos a 90 graus.","Estenda uma perna para cima e para trás, esticando joelho e quadril.","Volte e repita."]},
+  bridge:{n:"Ponte",type:"din",g:["gluteos","lombar"],dur:40,sides:1,per:3.4,
+    stim:"Glúteos trabalhando e lombar alongando na subida.",
+    steps:["Deite de costas, pés no chão e calcanhares embaixo dos joelhos.","Encolha a barriga e tire só o cóccix do chão, alongando a lombar.","Depois suba a coluna inteira, menos o pescoço, formando a ponte. Desça devagar e repita."]},
+  sit:{n:"Meio agachamento",type:"din",g:["quadriceps","gluteos","quadril"],dur:30,sides:1,per:2,
+    stim:"Coxas e quadril aquecendo, sem cansar.",
+    steps:["Em pé, pés na largura dos ombros.","Dobre joelhos e quadril, sentando para trás.","Desça só uma parte, acima da paralela, e volte rápido à posição inicial. Repita."]},
+  ankc:{n:"Círculos de tornozelo",type:"din",g:["panturrilha"],dur:30,sides:2,per:1.8,eq:"Apoio para a mão",
+    stim:"Tornozelo solto em todas as direções.",
+    steps:["Segure em um apoio firme.","Tire um pé do chão, uns 5 cm.","Desenhe círculos grandes com o dedão, respirando normalmente."]},
+  inch:{n:"Minhoca",type:"din",g:["posterior","panturrilha","ombros"],dur:45,sides:1,per:3,
+    stim:"Alongamento forte atrás das coxas e nas panturrilhas, com os ombros sustentando o peso.",
+    steps:["Em pé, pés juntos. Com as pernas retas, desça e apoie as mãos no chão à sua frente.","Caminhe com as mãos para frente até ficar na posição de flexão.","Com as mãos paradas, dê passos curtos com os pés até chegar perto das mãos. Repita."]},
+  wind:{n:"Moinho deitado",type:"din",g:["lombar","gluteos","posterior"],dur:40,sides:1,per:2.6,
+    stim:"Torção na lombar e alongamento no glúteo e atrás da coxa.",
+    steps:["Deite de costas, braços abertos e pernas esticadas.","Levante uma perna e cruze-a sobre o corpo, tentando tocar o chão perto da mão oposta.","Volte e repita com a outra perna, alternando."]},
+  iron:{n:"Escorpião",type:"din",g:["quadril","quadriceps","lombar"],dur:40,sides:1,per:2.6,
+    stim:"Abertura na frente do quadril e torção na lombar.",
+    steps:["Deite de bruços, braços abertos e palmas no chão.","Dobre um joelho e leve essa perna por trás do corpo, tentando tocar o chão perto da mão oposta.","Volte e repita com a outra perna, alternando."]},
+
+  child:{n:"Postura da criança",type:"est",g:["lombar","dorsal"],dur:60,sides:1,
+    stim:"Alongamento suave na lombar e nas costas inteiras.",
+    steps:["De quatro apoios, caminhe com as mãos para frente.","Sente sobre os calcanhares, deixando os braços arrastarem no chão para alongar toda a coluna.","Apoie a testa no chão e respire levando o ar para as costas. Evite se tiver problema nos joelhos."]},
+  khf:{n:"Flexor do quadril ajoelhado",type:"est",g:["quadril","quadriceps"],dur:45,sides:2,
+    stim:"Alongamento na frente do quadril da perna de trás.",
+    steps:["Ajoelhe e leve um pé à frente, com a sola inteira no chão.","Estenda a outra perna para trás, com o peito do pé no chão.","Leve o peso para frente até sentir alongar o quadril."]},
+  afq:{n:"Quadríceps em quatro apoios",type:"est",g:["quadriceps","quadril"],dur:40,sides:2,
+    stim:"Alongamento na frente da coxa e do quadril.",
+    steps:["De quatro apoios, tire uma perna do chão e segure o pé com a mão.","Mantenha o joelho bem dobrado, segurando o pé ou o tornozelo.","Estenda o quadril, empurrando-o em direção ao chão."]},
+  sideq:{n:"Quadríceps deitado de lado",type:"est",g:["quadriceps","quadril"],dur:45,sides:2,
+    stim:"Alongamento na frente da coxa até o quadril.",
+    steps:["Deite de lado, com o joelho de baixo dobrado a 90 graus à frente para estabilizar o tronco.","Dobre o joelho de cima para trás e segure o pé com a mão do mesmo lado.","Empurre o quadril para frente enquanto pressiona o pé contra a mão."]},
+  aok:{n:"Tornozelo sobre o joelho",type:"est",g:["gluteos"],dur:45,sides:2,
+    stim:"Alongamento profundo no glúteo da perna cruzada.",
+    steps:["Deitado de costas, joelhos dobrados e pés no chão.","Apoie o tornozelo de uma perna sobre o joelho oposto.","Segure a coxa da perna de baixo e puxe as duas pernas em direção ao peito, com pescoço e ombros relaxados."]},
+  kab:{n:"Joelho cruzado sobre o corpo",type:"est",g:["gluteos","lombar"],dur:45,sides:2,
+    stim:"Torção na lombar e alongamento na lateral do glúteo.",
+    steps:["Deite de costas com uma perna esticada.","Dobre a outra perna e leve-a por cima do corpo, segurando o joelho em direção ao chão com a mão oposta.","Deixe o outro braço ao lado e vire o rosto para o lado contrário ao joelho. O joelho não precisa tocar o chão."]},
+  hug:{n:"Abraçar os joelhos",type:"est",g:["lombar","gluteos"],dur:45,sides:1,
+    stim:"Lombar relaxando e alongamento nos glúteos.",
+    steps:["Deite de costas e traga os dois joelhos ao peito.","Segure por baixo dos joelhos, não por cima, para não forçar a articulação.","Puxe devagar os joelhos em direção aos ombros."]},
+  gab:{n:"Borboleta com flexão",type:"est",g:["adutores","lombar"],dur:45,sides:1,
+    stim:"Alongamento na virilha e ao longo das costas.",
+    steps:["Sente com os joelhos dobrados e os pés juntos.","Entrelace os dedos atrás da cabeça.","Enrole o tronco para baixo, levando os cotovelos para dentro das coxas. Pause e volte com as costas retas."]},
+  slg:{n:"Virilha deitado de lado",type:"est",g:["adutores","posterior"],dur:45,sides:2,
+    stim:"Alongamento na parte interna e atrás da coxa de cima.",
+    steps:["Deite de lado e dobre o joelho de baixo à frente para estabilizar.","Levante a perna de cima e segure por trás do joelho (mais fácil) ou pelo pé (mais difícil).","Puxe o joelho em direção ao ombro. Para intensificar, estique a perna."]},
+  sfh:{n:"Posterior sentado, uma perna",type:"est",g:["posterior"],dur:45,sides:2,
+    stim:"Alongamento atrás da coxa da perna estendida.",
+    steps:["Sente com uma perna estendida à frente.","Dobre a outra e apoie o pé na parte interna da coxa estendida.","Incline o tronco a partir do quadril e alcance o tornozelo."]},
+  toe:{n:"Tocar os pés em pé",type:"est",g:["posterior","lombar"],dur:45,sides:1,
+    stim:"Alongamento atrás das coxas e alívio na lombar.",
+    steps:["Em pé, com espaço à frente e atrás.","Dobre o corpo pela cintura, com as pernas esticadas.","Relaxe e deixe o tronco, os braços e as mãos penderem."]},
+  run:{n:"Alongamento do corredor",type:"est",g:["posterior","panturrilha"],dur:45,sides:2,
+    stim:"Alongamento atrás da coxa e na panturrilha da perna da frente.",
+    steps:["Em pé, leve uma perna para trás e desça o tronco em direção ao chão.","Mantenha o calcanhar da frente no chão e as mãos junto à perna da frente.","Para aprofundar, empurre o quadril para cima e depois baixe devagar."]},
+  calf:{n:"Panturrilha na parede",type:"est",g:["panturrilha"],dur:45,sides:2,eq:"Parede",
+    stim:"Alongamento na panturrilha da perna de trás.",
+    steps:["Fique de frente para uma parede, a alguns passos.","Coloque um pé à frente e apoie as mãos na parede.","Incline o corpo com calcanhar, quadril e cabeça em linha, mantendo o calcanhar de trás no chão."]},
+  sol:{n:"Sóleo e tendão de Aquiles",type:"est",g:["panturrilha"],dur:40,sides:2,
+    stim:"Alongamento baixo na panturrilha e no tendão de Aquiles da perna de trás.",
+    steps:["Em pé, pés na largura do quadril, um deles um pouco à frente.","Dobre os dois joelhos.","Mantenha o calcanhar de trás no chão."]},
+  spin:{n:"Torção sentado na cadeira",type:"est",g:["toracica","lombar"],dur:45,sides:2,eq:"Cadeira",
+    stim:"Torção no meio das costas e alongamento na lombar.",
+    steps:["Sente em uma cadeira com as costas retas e os pés no chão.","Entrelace os dedos atrás da cabeça, com os cotovelos abertos.","Gire o tronco para um lado o máximo que conseguir. Depois incline à frente e leve o cotovelo em direção ao chão, por dentro do joelho."]},
+  upb:{n:"Alto das costas",type:"est",g:["toracica","ombros"],dur:30,sides:1,
+    stim:"Alongamento entre as escápulas.",
+    steps:["Entrelace os dedos com os polegares para baixo.","Estenda as mãos à frente.","Arredonde os ombros enquanto empurra as mãos para longe."]},
+  midb:{n:"Torção em pé",type:"est",g:["toracica","lombar"],dur:30,sides:2,
+    stim:"Torção no meio das costas.",
+    steps:["Em pé, pés na largura dos ombros e mãos na cintura.","Gire o tronco pela cintura até sentir alongar.","Segure a posição, sem girar o quadril junto."]},
+  elb:{n:"Cotovelos para trás",type:"est",g:["peito","ombros"],dur:30,sides:1,
+    stim:"Abertura no peito e na frente dos ombros.",
+    steps:["Em pé, com a coluna reta.","Apoie as duas mãos na lombar, dedos para baixo e cotovelos abertos.","Puxe os cotovelos para trás devagar, tentando aproximá-los."]},
+  wall:{n:"Dorsal com braço na parede",type:"est",g:["dorsal","ombros"],dur:40,sides:2,eq:"Parede",
+    stim:"Alongamento na lateral das costas, abaixo da axila.",
+    steps:["Em pé, apoie um braço dobrado na parede ou no batente.","Incline o corpo devagar em direção ao braço.","Pare quando sentir alongar a lateral das costas."]},
+  lat:{n:"Inclinação lateral",type:"est",g:["dorsal","lombar"],dur:40,sides:2,
+    stim:"Alongamento em toda a lateral do tronco.",
+    steps:["Pés um pouco mais abertos que o quadril, joelhos levemente dobrados.","Apoie uma mão no quadril e leve a outra atrás da cabeça.","Incline o tronco para o lado da mão no quadril, com o peso igual nas duas pernas."]},
+  tri:{n:"Tríceps atrás da cabeça",type:"est",g:["triceps","dorsal"],dur:30,sides:2,
+    stim:"Alongamento atrás do braço.",
+    steps:["Leve uma mão para trás da cabeça.","Segure o cotovelo com a outra mão.","Puxe devagar."]},
+  shs:{n:"Ombro cruzado",type:"est",g:["ombros"],dur:30,sides:2,
+    stim:"Alongamento atrás do ombro.",
+    steps:["Cruze um braço à frente do corpo, mantendo-o reto.","Com o outro braço, puxe-o em direção ao peito.","Mantenha o ombro baixo, longe da orelha."]},
+  kfs:{n:"Antebraço ajoelhado",type:"est",g:["antebraco"],dur:30,sides:1,
+    stim:"Alongamento nos punhos e na parte interna dos antebraços.",
+    steps:["Ajoelhe e apoie as palmas no chão, com os dedos apontando para os joelhos.","Incline o corpo para trás devagar, com as palmas inteiras no chão.","Pare quando sentir alongar punhos e antebraços."]},
+  neck:{n:"Pescoço lateral",type:"est",g:["pescoco"],dur:30,sides:2,
+    stim:"Alongamento na lateral do pescoço e no trapézio.",
+    steps:["Deixe os ombros relaxados.","Incline a cabeça devagar em direção ao ombro.","Ajude com uma puxada leve da mão na lateral da cabeça."]},
+  chin:{n:"Queixo no peito",type:"est",g:["pescoco"],dur:30,sides:1,
+    stim:"Alongamento na nuca e no alto das costas.",
+    steps:["Sente no chão.","Entrelace os dedos atrás da cabeça, com os cotovelos apontando para frente.","Puxe a cabeça devagar em direção ao peito."]}
+};
+const ORDER = Object.keys(EX);
+const eqName = id => EX[id].eq || "Sem equipamento";
+
+const PREP = 6, SWITCH = 4, MAX_EX = 9;
+
+/* ---------- estado ---------- */
+const store = {get(k,d){try{const v=localStorage.getItem("mob_"+k);return v===null?d:JSON.parse(v)}catch(e){return d}},
+               set(k,v){try{localStorage.setItem("mob_"+k,JSON.stringify(v))}catch(e){}}};
+let when = store.get("when","pre");
+let by = store.get("by","treino");
+let selW = store.get("selW",["agach"]).filter(k=>WORKOUTS[k]);
+let selG = store.get("selG",["posterior","quadril"]).filter(k=>GROUPS[k]);
+let scale = store.get("scale",1);
+let R = {name:"",items:[],G:[]};
+const $ = s=>document.querySelector(s);
+$("#optBeep").checked = store.get("beep",true);
+$("#optVoice").checked = store.get("voice",true);
+
+/* ---------- montagem da rotina ---------- */
+function targetGroups(){
+  if(by==="grupo") return [...selG];
+  const out=[]; selW.forEach(w=>WORKOUTS[w].g.forEach(g=>{ if(!out.includes(g)) out.push(g) })); return out;
+}
+function buildRoutine(){
+  const G = targetGroups();
+  if(!G.length) return {name:"",items:[],G};
+  const pref = when==="pre" ? "din" : "est";
+  const need = {}; const reps = G.length<=2 ? 3 : 2;
+  G.forEach(g=>need[g]=reps);
+  const picked=[];
+  while(picked.length<MAX_EX){
+    let best=null, bestScore=0;
+    for(const id of ORDER){
+      if(picked.includes(id)) continue;
+      const e=EX[id];
+      const gain = e.g.reduce((s,g)=>s+(need[g]>0?1:0),0);
+      if(!gain) continue;
+      const score = gain*(e.type===pref?1:0.45) + (e.type===pref?0.3:0);
+      if(score>bestScore){bestScore=score;best=id}
+    }
+    if(!best) break;
+    picked.push(best); EX[best].g.forEach(g=>{ if(need[g]>0) need[g]-- });
+    if(Object.values(need).every(v=>v<=0)) break;
+  }
+  picked.sort((a,b)=> (EX[a].type===pref?0:1)-(EX[b].type===pref?0:1) || ORDER.indexOf(a)-ORDER.indexOf(b));
+  const foco = by==="treino" ? selW.map(w=>WORKOUTS[w].n).join(" + ") : (G.length<=2 ? G.map(g=>GROUPS[g]).join(" + ") : "Grupos escolhidos");
+  return {name:`${foco} · ${when==="pre"?"antes":"depois"}`, items:picked, G};
+}
+function secsFor(e){
+  let d=e.dur;
+  if(when==="pre" && e.type==="est") d=Math.min(d,30);   // antes do treino, segurar pouco
+  return Math.round(d*scale/5)*5 || 5;
+}
+function routineTotal(r){ let t=0; r.items.forEach(id=>{const e=EX[id]; t+=PREP+secsFor(e)*e.sides+(e.sides-1)*SWITCH}); return t; }
+const fmtMin = s => Math.max(1,Math.round(s/60));
+
+/* ---------- foto animada ---------- */
+function photo(id,{mirror=false,anim=false,cls=""}={}){
+  const e=EX[id], per=e.per||7;
+  if(!anim) return `<span class="photo ${cls}"><img src="img/${id}-1.jpg" alt="" loading="lazy"></span>`;
+  return `<span class="photo anim ${e.type} ${mirror?"mir":""} ${cls}" style="--per:${per}s">
+    <img src="img/${id}-0.jpg" alt="${e.n}: posição inicial"><img class="f1" src="img/${id}-1.jpg" alt="${e.n}: posição final"></span>`;
+}
+
+/* ---------- tela inicial ---------- */
+function renderHome(){
+  document.querySelectorAll("#whenSeg button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.w===when)));
+  document.querySelectorAll(".tabs button").forEach(b=>b.setAttribute("aria-selected",String(b.dataset.by===by)));
+  document.querySelectorAll("#scaleSeg button").forEach(b=>b.setAttribute("aria-pressed", String(+b.dataset.s===scale)));
+  $("#chips").innerHTML = by==="treino"
+    ? Object.entries(WORKOUTS).map(([k,w])=>`<button class="chip" data-k="${k}" aria-pressed="${selW.includes(k)}">${w.n}<small>${w.ex}</small></button>`).join("")
+    : Object.entries(GROUPS).map(([k,n])=>`<button class="chip" data-k="${k}" aria-pressed="${selG.includes(k)}">${n}</button>`).join("");
+
+  R = buildRoutine();
+  $("#focusLine").innerHTML = R.G.length ? `Foco: <b>${R.G.map(g=>GROUPS[g]).join(", ")}</b>` : "Escolha pelo menos uma opção acima.";
+  $("#stMin").textContent = R.items.length ? fmtMin(routineTotal(R)) : 0;
+  $("#stEx").textContent = R.items.length;
+  $("#startBtn").disabled = !R.items.length;
+
+  if(!R.items.length){ $("#list").innerHTML = `<li class="empty">Toque em um treino ou grupo muscular para montar a rotina.</li>`; return; }
+  $("#list").innerHTML = R.items.map((id,i)=>{
+    const e=EX[id], s=secsFor(e);
+    const hits = e.g.filter(g=>R.G.includes(g)).map(g=>GROUPS[g]).join(", ");
+    return `<li><details class="item" data-id="${id}"><summary>
+      <span class="num">${i+1}</span>${photo(id,{cls:"thumb"})}
+      <span><h3>${e.n}</h3><span class="meta"><span class="tag ${e.type}">${e.type==="din"?"Dinâmico":"Parado"}</span>${hits}</span></span>
+      <span class="time">${s} s<small>${e.sides>1?"cada lado":"&nbsp;"}</small></span>
+    </summary><div class="how"><div class="slot"></div>
+      <div><div class="tags">${e.g.map(g=>`<span class="pill">${GROUPS[g]}</span>`).join("")}<span class="pill eq">${eqName(id)}</span></div>
+        <div class="sect">Estímulo</div><p class="stim">${e.stim}</p>
+        <div class="sect">Instruções</div><ol>${e.steps.map(t=>`<li>${t}</li>`).join("")}</ol></div>
+    </div></details></li>`;
+  }).join("");
+}
+/* a foto animada só é carregada quando o exercício é aberto */
+document.addEventListener("toggle",e=>{
+  const d=e.target; if(!d.classList||!d.classList.contains("item")||!d.open) return;
+  const slot=d.querySelector(".slot"); if(slot && !slot.firstChild) slot.innerHTML=photo(d.dataset.id,{anim:true});
+},true);
+$("#whenSeg").addEventListener("click",e=>{const b=e.target.closest("button"); if(!b)return; when=b.dataset.w; store.set("when",when); renderHome();});
+document.querySelector(".tabs").addEventListener("click",e=>{const b=e.target.closest("button"); if(!b)return; by=b.dataset.by; store.set("by",by); renderHome();});
+$("#chips").addEventListener("click",e=>{
+  const b=e.target.closest(".chip"); if(!b)return; const k=b.dataset.k;
+  const arr = by==="treino"?selW:selG; const i=arr.indexOf(k); i>=0?arr.splice(i,1):arr.push(k);
+  store.set(by==="treino"?"selW":"selG",arr); renderHome();
+});
+$("#scaleSeg").addEventListener("click",e=>{const b=e.target.closest("button"); if(!b)return; scale=+b.dataset.s; store.set("scale",scale); renderHome();});
+$("#optBeep").addEventListener("change",e=>store.set("beep",e.target.checked));
+$("#optVoice").addEventListener("change",e=>store.set("voice",e.target.checked));
+
+/* ---------- som e voz ---------- */
+let actx=null;
+function beep(freq=880,len=.12){
+  if(!$("#optBeep").checked||!actx) return;
+  try{const o=actx.createOscillator(),g=actx.createGain();o.frequency.value=freq;o.connect(g);g.connect(actx.destination);
+    const t=actx.currentTime;g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.3,t+.01);g.gain.exponentialRampToValueAtTime(.0001,t+len);o.start(t);o.stop(t+len+.02)}catch(e){}
+}
+function say(txt){
+  if(!$("#optVoice").checked) return;
+  try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(txt);u.lang="pt-BR";u.rate=1.05;speechSynthesis.speak(u)}catch(e){}
+}
+let wake=null;
+async function keepAwake(on){
+  try{ if(on && navigator.wakeLock){wake=await navigator.wakeLock.request("screen")} else if(wake){await wake.release();wake=null} }catch(e){}
+}
+
+/* ---------- player ---------- */
+let Q=[], qi=0, left=0, running=false, tick=null, last=0, lastSec=-1, shown="";
+function buildQueue(r){
+  const q=[];
+  r.items.forEach((id,ix)=>{
+    const e=EX[id], s=secsFor(e);
+    for(let side=0; side<e.sides; side++){
+      q.push({kind:"prep",id,ix,side,dur: side===0?PREP:SWITCH});
+      q.push({kind:"work",id,ix,side,dur:s});
+    }
+  });
+  return q;
+}
+const sideName = (e,side)=> e.sides>1 ? (side===0?"Primeiro lado":"Outro lado") : "";
+const playIcon = on => on ? '<svg viewBox="0 0 24 24"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>' : '<svg viewBox="0 0 24 24"><path d="M7 4l13 8-13 8z"/></svg>';
+
+function renderStep(){
+  const st=Q[qi], e=EX[st.id];
+  const prep = st.kind==="prep";
+  const nxt = Q.slice(qi+1).find(x=>x.kind==="work" && (x.id!==st.id || x.side!==st.side));
+  const phase = prep ? (st.side>0?"Troque de lado":"Prepare-se") : (sideName(e,st.side)||(e.type==="din"?"Movimente":"Segure"));
+  const workDone = Q.slice(0,qi).filter(x=>x.kind==="work").length, works=Q.filter(x=>x.kind==="work").length;
+  const key = st.id+"/"+st.side;
+  if(shown!==key){
+    // tela nova: outro exercício ou outro lado
+    shown=key;
+    $("#pin").innerHTML = `
+      <div class="ptop"><span class="label">${R.name} · ${st.ix+1} de ${R.items.length}</span><button class="close" id="pClose">Sair</button></div>
+      <div class="bar"><i id="pBar"></i></div>
+      <div><div class="phase" id="pPhase"></div>
+      <h2 class="pname">${e.n}</h2><div class="meta">${e.g.map(g=>GROUPS[g]).join(", ")} · ${eqName(st.id)}</div></div>
+      ${photo(st.id,{anim:true,mirror:st.side===1})}
+      <div class="trow">
+        <div class="ring" id="pRing"><svg viewBox="0 0 100 100"><circle class="trk" cx="50" cy="50" r="44"/><circle class="arc" id="arc" cx="50" cy="50" r="44" stroke-dasharray="276.46" stroke-dashoffset="0"/></svg><div class="sec" id="sec"></div></div>
+        <p class="pstim"><b>Estímulo:</b> ${e.stim}</p>
+      </div>
+      <ol class="psteps">${e.steps.map(t=>`<li>${t}</li>`).join("")}</ol>
+      <div class="next">${nxt?`A seguir: <b>${EX[nxt.id].n}</b>${nxt.id===st.id?" (outro lado)":""}`:"Último exercício"}</div>
+      <div class="ctrls">
+        <button class="cb" id="pPrev" aria-label="Voltar"><svg viewBox="0 0 24 24"><path d="M6 5h2v14H6zM20 5v14L9 12z"/></svg></button>
+        <button class="cb main" id="pPlay"></button>
+        <button class="cb" id="pNext" aria-label="Pular"><svg viewBox="0 0 24 24"><path d="M16 5h2v14h-2zM4 5v14l11-7z"/></svg></button>
+      </div>`;
+    $("#pClose").onclick=closePlayer;
+    $("#pPlay").onclick=()=>{running?pause():resume()};
+    $("#pNext").onclick=()=>go(nextWork(1));
+    $("#pPrev").onclick=()=>go(nextWork(-1));
+    if(nxt){ [0,1].forEach(f=>{ const im=new Image(); im.src=`img/${nxt.id}-${f}.jpg`; }); }
+  }
+  // atualiza só o que muda entre preparação, execução e pausa (a foto segue animando)
+  const ph=$("#pPhase"); ph.textContent=phase; ph.classList.toggle("prep",prep);
+  $("#pRing").classList.toggle("prep",prep);
+  $("#pBar").style.width=(workDone/works*100)+"%";
+  const pb=$("#pPlay"); pb.innerHTML=playIcon(running); pb.setAttribute("aria-label",running?"Pausar":"Continuar");
+  $("#player").classList.toggle("paused",!running);
+  updateRing();
+}
+function nextWork(dir){
+  let i=qi;
+  if(dir>0){ i++; while(i<Q.length && Q[i].kind!=="prep") i++; return i; }
+  let start=qi; while(start>0 && Q[start].kind!=="prep") start--;
+  if(qi!==start || (Q[qi].dur-left)>3) return start;
+  i=start-1; while(i>0 && Q[i].kind!=="prep") i--; return Math.max(0,i);
+}
+function updateRing(){
+  const st=Q[qi]; if(!st) return;
+  const a=$("#arc"), s=$("#sec"); if(!a) return;
+  a.style.strokeDashoffset = 276.46*(1-left/st.dur);
+  s.textContent = Math.max(0,Math.ceil(left));
+}
+function announce(){
+  const st=Q[qi], e=EX[st.id];
+  if(st.kind==="prep"){ say(st.side>0?"Troque de lado":e.n); }
+  else beep(1320,.25);
+}
+function go(i){
+  if(i>=Q.length){ finish(); return; }
+  qi=Math.max(0,i); left=Q[qi].dur; lastSec=-1; renderStep(); announce();
+}
+function loop(){
+  const now=performance.now(); const dt=(now-last)/1000; last=now;
+  if(!running) return;
+  left-=dt;
+  const c=Math.ceil(left);
+  if(c!==lastSec){ lastSec=c; if(c<=3&&c>=1) beep(Q[qi].kind==="work"?880:660, Q[qi].kind==="work"?.12:.08); }
+  if(left<=0){ go(qi+1); return; }
+  updateRing();
+}
+function resume(){ running=true; last=performance.now(); clearInterval(tick); tick=setInterval(loop,100); keepAwake(true); renderStep(); }
+function pause(){ running=false; clearInterval(tick); keepAwake(false); renderStep(); }
+function finish(){
+  running=false; clearInterval(tick); keepAwake(false); beep(1320,.4); say("Rotina concluída. Bom treino!");
+  shown="";
+  $("#pin").innerHTML=`<div class="done"><div class="label">Concluído</div><h2 class="pname">${R.name}</h2>
+    <p class="meta">${R.items.length} exercícios em cerca de ${fmtMin(routineTotal(R))} minutos.</p>
+    <button class="start" id="pDone">Voltar</button></div>`;
+  $("#pDone").onclick=closePlayer;
+}
+function openPlayer(){
+  if(!R.items.length) return;
+  try{ actx = actx || new (window.AudioContext||window.webkitAudioContext)(); actx.resume&&actx.resume(); }catch(e){}
+  Q=buildQueue(R); shown="";
+  $("#player").hidden=false; document.body.style.overflow="hidden";
+  running=true; qi=0; left=Q[0].dur; lastSec=-1; last=performance.now();
+  clearInterval(tick); tick=setInterval(loop,100); keepAwake(true);
+  renderStep(); announce();
+}
+function closePlayer(){
+  running=false; clearInterval(tick); keepAwake(false);
+  try{speechSynthesis.cancel()}catch(e){}
+  $("#player").hidden=true; document.body.style.overflow="";
+}
+$("#startBtn").addEventListener("click",openPlayer);
+document.addEventListener("keydown",e=>{
+  if($("#player").hidden) return;
+  if(e.code==="Space"){e.preventDefault(); running?pause():resume();}
+  if(e.key==="Escape") closePlayer();
+});
+document.addEventListener("visibilitychange",()=>{ if(!document.hidden && running) keepAwake(true); });
+
+renderHome();
+</script>
+</body>
+</html>
